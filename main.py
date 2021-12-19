@@ -229,6 +229,8 @@ class App:
     def update(self):
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
+        if pyxel.btnp(pyxel.KEY_S):
+            pyxel.screenshot()
         if self.state == "playing":
             self.update_playing()
         elif self.state == "gameover":
