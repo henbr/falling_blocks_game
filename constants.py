@@ -1,3 +1,7 @@
+BASE_SPEED = 20  # Number of frames between moving the piece downward
+LEVEL_SPEED_ADJUST = 1  # How much to increase speed for each level
+LINES_PER_LEVEL = 10  # How many lines to clear to get to the next level
+
 TILE_SIZE = 8
 GAME_WIDTH = 10
 GAME_HEIGHT = 20

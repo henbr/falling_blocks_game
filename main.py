@@ -83,11 +83,11 @@ class Game:
         self.score = 0
         self.lines = 0
         self.level = 1
-        self.level_count_down = 10
+        self.level_count_down = LINES_PER_LEVEL
         self.gameover = False
 
     def update(self):
-        if pyxel.frame_count % (16 - self.level) == 0:
+        if pyxel.frame_count % max(1, (BASE_SPEED - LEVEL_SPEED_ADJUST * self.level)) == 0:
             modified = self.piece.move_down()
             if not modified.is_position_valid(self.tiles):
                 self.place_piece()
@@ -98,7 +98,7 @@ class Game:
         self.clear_complete_lines()
 
     def clear_complete_lines(self):
-        line_score = 0
+        cleared_lines = 0
         for ty in range(self.height):
             num_tiles = 0
             for tx in range(self.width):
@@ -106,18 +106,17 @@ class Game:
                     num_tiles += 1
             if num_tiles == GAME_WIDTH:
                 self.clear_line(ty)
-                self.lines += 1
-                line_score += self.level
-                line_score *= 2
+                cleared_lines += 1
 
-        self.score += line_score
-        if line_score != 0:
+        self.lines += cleared_lines
+        self.score += pow(self.level, 2) * pow(cleared_lines, 3)
+
+        if cleared_lines > 0:
             pyxel.play(0, 1)
             self.level_count_down -= 1
-
-        if self.level_count_down == 0:
-            self.level_count_down = 10
-            self.level += 1
+            if self.level_count_down == 0:
+                self.level_count_down = LINES_PER_LEVEL
+                self.level += 1
 
     def clear_line(self, line_to_clear):
         for ty in reversed(range(line_to_clear+1)):
@@ -141,6 +140,7 @@ class Game:
     def place_piece(self):
         tiles_copy(self.piece.piece[self.piece.rotation],
                    self.tiles, self.piece.x, self.piece.y)
+        self.score += self.level
 
     def draw(self):
         tiles_draw(self.tiles, GAME_TOP_TX, GAME_TOP_TY)
@@ -214,8 +214,6 @@ class Game:
 
 class App:
     def __init__(self):
-        self.gameover = False
-        self.game = None
         self.highscore = read_high_score()
         self.start_new_game()
         pyxel.init(256, 192, title="Falling Blocks Game")
@@ -226,28 +224,37 @@ class App:
         self.game = Game(GAME_WIDTH, GAME_HEIGHT, self.highscore)
         self.game.update_next_piece()
         self.game.spawn_piece()
-        self.gameover = False
+        self.state = "playing"
 
     def update(self):
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
+        if self.state == "playing":
+            self.update_playing()
+        elif self.state == "gameover":
+            self.update_gameover()
+        elif self.state == "paused":
+            self.update_paused()
 
-        if pyxel.btnp(pyxel.KEY_SPACE) and self.gameover:
+    def update_paused(self):
+        if pyxel.btnp(pyxel.KEY_P):
+            self.state = "playing"
+            pyxel.play(0, 2)
+
+    def update_gameover(self):
+        if pyxel.btnp(pyxel.KEY_SPACE):
             self.start_new_game()
 
-        if self.game != None and not self.gameover:
-            self.update_game()
-
-    def update_game(self):
+    def update_playing(self):
+        if pyxel.btnp(pyxel.KEY_P):
+            self.state = "paused"
+            pyxel.play(0, 3)
         if pyxel.btnp(pyxel.KEY_UP):
             self.game.rotate_left()
-
         if pyxel.btnp(pyxel.KEY_DOWN):
             self.game.drop()
-
         if pyxel.btnp(pyxel.KEY_LEFT):
             self.game.move_left()
-
         if pyxel.btnp(pyxel.KEY_RIGHT):
             self.game.move_right()
 
@@ -256,18 +263,21 @@ class App:
         if self.game.gameover:
             write_score(self.game.score)
             self.highscore = max(self.highscore, self.game.score)
-            self.game = None
-            self.gameover = True
+            self.state = "gameover"
+            pyxel.play(0, 4)
 
     def draw(self):
         pyxel.cls(0)
-        if self.game != None:
+        if self.state == "playing":
             self.game.draw()
-        elif self.gameover:
+        elif self.state == "gameover":
             pyxel.text((GAME_TOP_TX + 3) * TILE_SIZE,
                        (GAME_TOP_TY + 7) * TILE_SIZE, "Game Over", 8)
             pyxel.text((GAME_TOP_TX + 3) * TILE_SIZE - 4,
                        (GAME_TOP_TY + 9) * TILE_SIZE, "Press Space", 8)
+        elif self.state == "paused":
+            pyxel.text((GAME_TOP_TX + 3) * TILE_SIZE + 6,
+                       (GAME_TOP_TY + 7) * TILE_SIZE, "Paused", 8)
         pyxel.bltm(0, 0, 0, 0, 0, 32, 24, 0)
 
 
