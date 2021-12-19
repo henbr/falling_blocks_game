@@ -1,6 +1,6 @@
 # Falling Blocks Game
 
-The is a clone of a [well known puzzle game](https://en.wikipedia.org/wiki/Tetris), so unfortunatly nothing particularly interesting. The game is made using the [Pyxel](https://github.com/kitao/pyxel) game engine.
+A puzzle game made using the [Pyxel](https://github.com/kitao/pyxel) game engine.
 
 ## Screenshot
 
